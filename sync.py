@@ -3,6 +3,7 @@ import os
 import socket
 import hashlib
 import json
+import argparse
 
 ROOT_DIR = '/Users/stewart/Pictures'  # root path to the folder you want to sync to glacier
 UPLOADED = set()
@@ -54,5 +55,16 @@ def process_files():
                 print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
 
 if __name__ == '__main__':
-    populate_hashes_uploaded()
-    process_files()
+    parser = argparse.ArgumentParser(description='CL utility to sync files to AWS glacier.')
+    parser.add_argument('--path', '-p', default=ROOT_DIR, help='Root path to the folder containing the files to sync.')
+    parser.add_argument('--region', '-r', default=REGION, help='AWS glacier storage region to use.')
+    parser.add_argument('--vault', '-v', default=VAULT_NAME, help='Vault name to store archives[files] in.')
+    parser.add_argument('--list', '-l', action='store_true', help='List the files to be sync\'d')
+    args = parser.parse_args()
+    ROOT_DIR = args.path
+    REGION = args.region
+    VAULT_NAME = args.vault
+    if args.list:
+        print 'listiing the files....'
+    #populate_hashes_uploaded()
+    #process_files()
