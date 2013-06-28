@@ -46,16 +46,18 @@ def upload_files():
         if not fd['sha1'] in UPLOADED:
             fd['machine'] = HOST_NAME
             #fd['archive_id'] = upload_file_to_vault(v, fd)
-            UPLOADED.add(fd['sha1'])
             file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
+            UPLOADED.add(fd['sha1'])
             print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
         else:
             #file already uploaded according to our records
             print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
 
-def logerror(msg, er):
-    print msg, str(er)
-    file('error.log', 'a').write(msg + '\n' + str(er) + '\n')
+
+def logerror(msg, ex):
+    print msg, str(ex)
+    file('error.log', 'a').write(msg + ' exception: ' + str(ex) + '\n')
+
 
 def get_files_on_machine(echo=False):
     fs = []
