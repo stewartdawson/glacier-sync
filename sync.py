@@ -18,6 +18,7 @@ def connect_to_glacier_get_vault(region=REGION, vault=VAULT_NAME):
     print 'available regions:', glacier.regions()
     vaults = cn.list_vaults()
     print 'available vaults in region:',  vaults
+    print 'using', vault, 'vault in region', region
     if not vault in [v.name for v in vaults]:
         print 'vault', vault, 'does not exist, creating it...'
         return cn.create_vault(vault)
@@ -35,7 +36,7 @@ def get_file_hashes_uploaded():
 
 def upload_file_to_vault(v, fd):
     #Upload file to glacier
-    return v.upload_archive(fd['file_path'], description=json.dumps(fd))
+    return v.upload_archive(fd['file_path'] + '-' + fd['sha1'], description=json.dumps(fd))
 
 
 def upload_files():
