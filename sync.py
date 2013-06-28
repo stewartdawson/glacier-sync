@@ -25,9 +25,9 @@ def connect_to_glacier_get_vault(region=REGION, vault=VAULT_NAME):
         return cn.get_vault(vault)
 
 
-def populate_hashes_uploaded():
+def get_file_hashes_uploaded():
     if os.path.exists(UPLOADED_FILE_NAME):
-        print 'loading previously uploaded file hashes'
+        print 'loading previously uploaded file hashes...'
         with open(UPLOADED_FILE_NAME, 'r') as f:
             for l in f:
                 UPLOADED.add(json.loads(l)['sha1'])
@@ -38,23 +38,38 @@ def upload_file_to_vault(v, fd):
     return v.upload_archive(fd['file_path'], description=json.dumps(fd))
 
 
-def process_files():
+def upload_files():
     v = connect_to_glacier_get_vault()
+    file_data = get_files_on_machine()
+    for fd in file_data:
+        if not fd['sha1'] in UPLOADED:
+            fd['machine'] = HOST_NAME
+            #fd['archive_id'] = upload_file_to_vault(v, fd)
+            UPLOADED.add(fd['sha1'])
+            file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
+            print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
+        else:
+            #file already uploaded according to our records
+            print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
+
+
+def get_files_on_machine(echo=False):
+    fs = []
     for root, dirs, files in os.walk(ROOT_DIR):
         for f in files:
-            fd = {'machine': HOST_NAME}
+            fd = {}
             fd['file_path'] = os.path.join(root, f)
             fd['sha1'] = hashlib.sha1(file(fd['file_path'], 'rb').read()).hexdigest()
-            if not fd['sha1'] in UPLOADED:
-                #fd['archive_id'] = upload_file_to_vault(v, fd)
-                UPLOADED.add(fd['sha1'])
-                file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
-                print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
-            else:
-                #file already uploaded according to our records
-                print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
+            if echo:
+                print fd['file_path']
+            fs.append(fd)
+    if echo:
+        print '**', len(fs), 'files on machine under', ROOT_DIR, '**'
+    return fs
+
 
 if __name__ == '__main__':
+    # process arguments
     parser = argparse.ArgumentParser(description='CL utility to sync files to AWS glacier.')
     parser.add_argument('--path', '-p', default=ROOT_DIR, help='Root path to the folder containing the files to sync.')
     parser.add_argument('--region', '-r', default=REGION, help='AWS glacier storage region to use.')
@@ -64,7 +79,11 @@ if __name__ == '__main__':
     ROOT_DIR = args.path
     REGION = args.region
     VAULT_NAME = args.vault
+
+    # operate on arguments
     if args.list:
         print 'listiing the files....'
-    #populate_hashes_uploaded()
-    #process_files()
+        get_files_on_machine(echo=True)
+    else:
+        get_file_hashes_uploaded()
+        upload_files()
