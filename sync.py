@@ -5,7 +5,7 @@ import hashlib
 import json
 import argparse
 
-ROOT_DIR = '/Users/stewart/Pictures'  # root path to the folder you want to sync to glacier
+ROOT_DIR = '/Volumes/Photos/'  # root path to the folder you want to sync to glacier
 UPLOADED = set()
 REGION = 'us-east-1'  # glacier region for your vault where the archives are to be stored
 VAULT_NAME = 'photos'  # name of the vault to store archives into
@@ -53,6 +53,9 @@ def upload_files():
             #file already uploaded according to our records
             print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
 
+def logerror(msg, er):
+    print msg, str(er)
+    file('error.log', 'a').write(msg + '\n' + str(er) + '\n')
 
 def get_files_on_machine(echo=False):
     fs = []
@@ -60,7 +63,11 @@ def get_files_on_machine(echo=False):
         for f in files:
             fd = {}
             fd['file_path'] = os.path.join(root, f)
-            fd['sha1'] = hashlib.sha1(file(fd['file_path'], 'rb').read()).hexdigest()
+            try:
+                fd['sha1'] = hashlib.sha1(file(fd['file_path'], 'rb').read()).hexdigest()
+            except MemoryError as me:
+                fd['sha1'] = hashlib.sha1(HOST_NAME + '-' + fd['file_path']).hexdigest()
+                logerror('error hashing file %s using full file path name for hash: %s' %(fd['file_path'], fd['sha1']), me)
             if echo:
                 print fd['file_path']
             fs.append(fd)
@@ -70,21 +77,24 @@ def get_files_on_machine(echo=False):
 
 
 if __name__ == '__main__':
-    # process arguments
-    parser = argparse.ArgumentParser(description='CL utility to sync files to AWS glacier.')
-    parser.add_argument('--path', '-p', default=ROOT_DIR, help='Root path to the folder containing the files to sync.')
-    parser.add_argument('--region', '-r', default=REGION, help='AWS glacier storage region to use.')
-    parser.add_argument('--vault', '-v', default=VAULT_NAME, help='Vault name to store archives[files] in.')
-    parser.add_argument('--list', '-l', action='store_true', help='List the files to be sync\'d')
-    args = parser.parse_args()
-    ROOT_DIR = args.path
-    REGION = args.region
-    VAULT_NAME = args.vault
+    try:
+        # process arguments
+        parser = argparse.ArgumentParser(description='CL utility to sync files to AWS glacier.')
+        parser.add_argument('--path', '-p', default=ROOT_DIR, help='Root path to the folder containing the files to sync.')
+        parser.add_argument('--region', '-r', default=REGION, help='AWS glacier storage region to use.')
+        parser.add_argument('--vault', '-v', default=VAULT_NAME, help='Vault name to store archives[files] in.')
+        parser.add_argument('--list', '-l', action='store_true', help='List the files to be sync\'d')
+        args = parser.parse_args()
+        ROOT_DIR = args.path
+        REGION = args.region
+        VAULT_NAME = args.vault
 
-    # operate on arguments
-    if args.list:
-        print 'listiing the files....'
-        get_files_on_machine(echo=True)
-    else:
-        get_file_hashes_uploaded()
-        upload_files()
+        # operate on arguments
+        if args.list:
+            print 'listiing the files....'
+            get_files_on_machine(echo=True)
+        else:
+            get_file_hashes_uploaded()
+            upload_files()
+    except Exception as ex:
+        logerror('Exception occurred running glacier sync script', ex)
