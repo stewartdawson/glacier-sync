@@ -39,20 +39,23 @@ def upload_file_to_vault(v, fd):
     return v.upload_archive(fd['file_path'] + '-' + fd['sha1'], description=json.dumps(fd))
 
 
-def upload_files():
+def upload_files(limit=0):
     v = connect_to_glacier_get_vault()
     file_data = get_files_on_machine()
+    upload_count = 0
     for fd in file_data:
         if not fd['sha1'] in UPLOADED:
             fd['machine'] = HOST_NAME
             try:
+                if limit > 0 and upload_count >= limit:
+                    break
                 #fd['archive_id'] = upload_file_to_vault(v, fd)
                 file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
+                upload_count  += 1
                 UPLOADED.add(fd['sha1'])
                 print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
             except glacier.exceptions.UploadArchiveError as uae:
-                print 'FAILED to upload', fd['file_path'], 'with hash', fd['sha1']
-                logerror('Failed to upload %s with hash %s' %(fd['file_path'], fd['sha1']), uae)
+                logerror('FAILED to upload %s with hash %s' %(fd['file_path'], fd['sha1']), uae)
         else:
             #file already uploaded according to our records
             print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
@@ -89,7 +92,8 @@ if __name__ == '__main__':
         parser.add_argument('--path', '-p', default=ROOT_DIR, help='Root path to the folder containing the files to sync.')
         parser.add_argument('--region', '-r', default=REGION, help='AWS glacier storage region to use.')
         parser.add_argument('--vault', '-v', default=VAULT_NAME, help='Vault name to store archives[files] in.')
-        parser.add_argument('--list', '-l', action='store_true', help='List the files to be sync\'d')
+        parser.add_argument('--list', '-ls', action='store_true', help='List the files to be sync\'d')
+        parser.add_argument('--limit', '-li', default=0, type=int, help='Limit to archive upload to this number.')
         args = parser.parse_args()
         ROOT_DIR = args.path
         REGION = args.region
@@ -101,6 +105,6 @@ if __name__ == '__main__':
             get_files_on_machine(echo=True)
         else:
             get_file_hashes_uploaded()
-            upload_files()
+            upload_files(args.limit)
     except Exception as ex:
         logerror('Exception occurred running glacier sync script', ex)
