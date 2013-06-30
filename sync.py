@@ -36,7 +36,7 @@ def get_file_hashes_uploaded():
 
 def upload_file_to_vault(v, fd):
     #Upload file to glacier
-    return v.upload_archive(fd['file_path'] + '-' + fd['sha1'], description=json.dumps(fd))
+    return v.upload_archive(fd['file_path'], description=json.dumps(fd))
 
 
 def upload_files(limit=0):
