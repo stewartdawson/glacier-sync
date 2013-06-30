@@ -45,10 +45,14 @@ def upload_files():
     for fd in file_data:
         if not fd['sha1'] in UPLOADED:
             fd['machine'] = HOST_NAME
-            #fd['archive_id'] = upload_file_to_vault(v, fd)
-            file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
-            UPLOADED.add(fd['sha1'])
-            print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
+            try:
+                #fd['archive_id'] = upload_file_to_vault(v, fd)
+                file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
+                UPLOADED.add(fd['sha1'])
+                print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
+            except glacier.exceptions.UploadArchiveError as uae:
+                print 'FAILED to upload', fd['file_path'], 'with hash', fd['sha1']
+                logerror('Failed to upload %s with hash %s' %(fd['file_path'], fd['sha1']), uae)
         else:
             #file already uploaded according to our records
             print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
