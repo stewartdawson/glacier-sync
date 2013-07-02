@@ -10,10 +10,10 @@ You are also required to create a .boto configuration file containing your AWS c
 I.E. create ~/.boto and insert your credential info.  
 http://boto.readthedocs.org/en/latest/getting_started.html#configuring-boto-credentials
 
-To determine where to place the .boto file on windows, run the folowing command in the Python interpreter:
-	import os  
-	os.path.expanduser('~/.boto')
-
+To determine where to place the .boto file on windows, run the folowing command in the Python interpreter:  
+>	import os  
+>	os.path.expanduser('~/.boto')  
+	
 See this tutorial on where to find your AWS credential info - http://aws.amazon.com/articles/Amazon-S3/3998
 
 
@@ -21,8 +21,9 @@ Running the script
 ------------------
 
 You can configure the local folder you want to copy to glacier, as well as other options like the AWS region to use, and the glacier vault name to create/use to store your archives (re files), in the sync.py code file directly, or by passing these options in as arguments at the command line.
-See:  
-	python sync.py --help  
+Run:  
+>	python sync.py --help
+
 for information on the available options.
 
 
