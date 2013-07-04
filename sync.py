@@ -5,7 +5,7 @@ import hashlib
 import json
 import argparse
 
-ROOT_DIR = '/Volumes/Photos/'  # root path to the folder you want to sync to glacier
+ROOT_DIR = '/Users/stewart/Pictures/'  # '/Volumes/Photos/'  # root path to the folder you want to sync to glacier
 UPLOADED = set()
 REGION = 'us-east-1'  # glacier region for your vault where the archives are to be stored
 VAULT_NAME = 'photos'  # name of the vault to store archives into
@@ -41,21 +41,19 @@ def upload_file_to_vault(v, fd):
 
 def upload_files(limit=0):
     v = connect_to_glacier_get_vault()
-    file_data = get_files_on_machine()
     upload_count = 0
-    for fd in file_data:
+    for fd in files_on_machine():
         if not fd['sha1'] in UPLOADED:
-            fd['machine'] = HOST_NAME
             try:
                 if limit > 0 and upload_count >= limit:
                     break
                 #fd['archive_id'] = upload_file_to_vault(v, fd)
                 file(UPLOADED_FILE_NAME, 'a').write(json.dumps(fd) + '\n')
-                upload_count  += 1
+                upload_count += 1
                 UPLOADED.add(fd['sha1'])
                 print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
             except glacier.exceptions.UploadArchiveError as uae:
-                logerror('FAILED to upload %s with hash %s' %(fd['file_path'], fd['sha1']), uae)
+                logerror('FAILED to upload %s with hash %s' % (fd['file_path'], fd['sha1']), uae)
         else:
             #file already uploaded according to our records
             print 'ALREADY UPLOADED', fd['file_path'], 'with hash', fd['sha1']
@@ -66,23 +64,18 @@ def logerror(msg, ex):
     file('error.log', 'a').write(msg + ' exception: ' + str(ex) + '\n')
 
 
-def get_files_on_machine(echo=False):
-    fs = []
+def files_on_machine():
     for root, dirs, files in os.walk(ROOT_DIR):
         for f in files:
             fd = {}
             fd['file_path'] = os.path.join(root, f)
+            fd['machine'] = HOST_NAME
             try:
                 fd['sha1'] = hashlib.sha1(file(fd['file_path'], 'rb').read()).hexdigest()
             except MemoryError as me:
                 fd['sha1'] = hashlib.sha1(HOST_NAME + '-' + fd['file_path']).hexdigest()
-                logerror('error hashing file %s using full file path name for hash: %s' %(fd['file_path'], fd['sha1']), me)
-            if echo:
-                print fd['file_path']
-            fs.append(fd)
-    if echo:
-        print '**', len(fs), 'files on machine under', ROOT_DIR, '**'
-    return fs
+                logerror('error hashing file %s using full file path name for hash: %s' % (fd['file_path'], fd['sha1']), me)
+            yield fd
 
 
 if __name__ == '__main__':
@@ -101,10 +94,16 @@ if __name__ == '__main__':
 
         # operate on arguments
         if args.list:
-            print 'listiing the files....'
-            get_files_on_machine(echo=True)
+            print 'listing the files....'
+            file_count = 0
+            for root, dirs, files in os.walk(ROOT_DIR):
+                for f in files:
+                    print os.path.join(root, f)
+                    file_count += 1
+            print '**', file_count, 'files on machine under', ROOT_DIR, '**'
         else:
             get_file_hashes_uploaded()
             upload_files(args.limit)
     except Exception as ex:
+        print ex
         logerror('Exception occurred running glacier sync script', ex)
