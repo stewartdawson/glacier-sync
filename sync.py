@@ -1,4 +1,5 @@
 from boto import glacier
+from datetime import datetime
 import os
 import socket
 import hashlib
@@ -61,7 +62,7 @@ def upload_files(limit=0):
 
 def logerror(msg, ex):
     print msg, str(ex)
-    file('error.log', 'a').write(msg + ' exception: ' + str(ex) + '\n')
+    file('error.log', 'a').write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + msg + ' exception: ' + str(ex) + '\n')
 
 
 def files_on_machine():
