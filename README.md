@@ -32,9 +32,9 @@ for information on the available options.
 Current scope / Future features
 -------------------------------
 
-At this stage this script only supports a one way sync fron a local machine to glacier. It does not currently support a reconciliation of files that may be on glacier but not on your local machine, or files that are on glacier that have not been recorded as already uploaded from your local machine.  
+At this stage this script only supports a one way sync from a local machine to glacier. It does not currently support a reconciliation of files that may be on glacier but not on your local machine, or files that are on glacier that have not been recorded as already uploaded from your local machine.  
 There is scope to request an archive inventory from glacier that could be used to reconcile files already uploaded with those available on the local machine.
-The archives are stored in glacier with meta date in the archive description that could be used to support future sync'ing and reconciliation. (The source machine name, full file path, and sha1 hash are all available in this JSON encoded meta data).
+The archives are stored in glacier with meta data in the archive description that could be used to support future sync'ing and reconciliation. (The source machine name, full file path, and sha1 hash are all available in this JSON encoded meta data).
 
 Motivation
 ----------
