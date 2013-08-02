@@ -53,7 +53,7 @@ def upload_files(limit=0):
                 upload_count += 1
                 UPLOADED.add(fd['sha1'])
                 print 'UPLOADED', fd['file_path'], 'with hash', fd['sha1']
-            except (UnexpectedHTTPResponseError, glacier.exceptions.UploadArchiveError) as ex:
+            except (glacier.exceptions.UnexpectedHTTPResponseError , glacier.exceptions.UploadArchiveError) as ex:
                 logerror('FAILED to upload %s with hash %s' % (fd['file_path'], fd['sha1']), ex)
         else:
             #file already uploaded according to our records
